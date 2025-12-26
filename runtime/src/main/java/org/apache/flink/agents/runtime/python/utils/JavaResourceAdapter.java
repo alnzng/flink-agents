@@ -68,16 +68,17 @@ public class JavaResourceAdapter {
      * @throws Exception if the resource cannot be retrieved
      */
     public Resource getResource(String name, ResourceType type) throws Exception {
-        if (resourceCache.containsKey(type) && resourceCache.get(type).containsKey(name)) {
-            return resourceCache.get(type).get(name);
+        Map<String, Resource> cachedResources = resourceCache.get(type);
+        if (cachedResources != null && cachedResources.containsKey(name)) {
+            return cachedResources.get(name);
         }
 
-        if (!resourceProviders.containsKey(type)
-                || !resourceProviders.get(type).containsKey(name)) {
+        Map<String, ResourceProvider> providers = resourceProviders.get(type);
+        if (providers == null || !providers.containsKey(name)) {
             throw new IllegalArgumentException("Resource not found: " + name + " of type " + type);
         }
 
-        ResourceProvider provider = resourceProviders.get(type).get(name);
+        ResourceProvider provider = providers.get(name);
         if (provider instanceof PythonResourceProvider) {
             // TODO: Support getting resources from PythonResourceProvider in JavaResourceAdapter.
             throw new OperationNotSupportedException("PythonResourceProvider is not supported.");

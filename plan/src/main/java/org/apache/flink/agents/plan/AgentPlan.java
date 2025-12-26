@@ -138,11 +138,23 @@ public class AgentPlan implements Serializable {
     }
 
     public Map<String, Object> getActionConfig(String actionName) {
-        return actions.get(actionName).getConfig();
+        Action action = actions.get(actionName);
+        if (action == null) {
+            throw new IllegalArgumentException("Action not found: " + actionName);
+        }
+        return action.getConfig();
     }
 
     public Object getActionConfigValue(String actionName, String key) {
-        return Objects.requireNonNull(actions.get(actionName).getConfig()).get(key);
+        Action action = actions.get(actionName);
+        if (action == null) {
+            throw new IllegalArgumentException("Action not found: " + actionName);
+        }
+        Map<String, Object> config = action.getConfig();
+        if (config == null) {
+            return null;
+        }
+        return config.get(key);
     }
 
     public Map<String, List<Action>> getActionsByEvent() {
@@ -167,17 +179,18 @@ public class AgentPlan implements Serializable {
      */
     public Resource getResource(String name, ResourceType type) throws Exception {
         // Check cache first
-        if (resourceCache.containsKey(type) && resourceCache.get(type).containsKey(name)) {
-            return resourceCache.get(type).get(name);
+        Map<String, Resource> cachedResources = resourceCache.get(type);
+        if (cachedResources != null && cachedResources.containsKey(name)) {
+            return cachedResources.get(name);
         }
 
         // Get resource provider
-        if (!resourceProviders.containsKey(type)
-                || !resourceProviders.get(type).containsKey(name)) {
+        Map<String, ResourceProvider> providers = resourceProviders.get(type);
+        if (providers == null || !providers.containsKey(name)) {
             throw new IllegalArgumentException("Resource not found: " + name + " of type " + type);
         }
 
-        ResourceProvider provider = resourceProviders.get(type).get(name);
+        ResourceProvider provider = providers.get(name);
 
         if (pythonResourceAdapter != null && provider instanceof PythonResourceProvider) {
             ((PythonResourceProvider) provider).setPythonResourceAdapter(pythonResourceAdapter);
